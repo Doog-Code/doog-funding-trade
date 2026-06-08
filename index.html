@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basis Trade Scanner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #0f1218;
+    --bg3: #151a22;
+    --border: #1e2530;
+    --border2: #2a3340;
+    --text: #e2e8f0;
+    --text2: #8896a8;
+    --text3: #4a5568;
+    --green: #00e5a0;
+    --green2: #00b87a;
+    --green-dim: rgba(0,229,160,0.08);
+    --red: #ff4d6a;
+    --red-dim: rgba(255,77,106,0.08);
+    --orange: #ffaa00;
+    --orange-dim: rgba(255,170,0,0.08);
+    --blue: #4da6ff;
+    --blue-dim: rgba(77,166,255,0.08);
+    --accent: #00e5a0;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; box-shadow: 0 0 10px var(--green); }
+    50% { opacity:0.5; box-shadow: 0 0 4px var(--green); }
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .live-badge {
+    background: var(--green-dim);
+    border: 1px solid rgba(0,229,160,0.2);
+    color: var(--green);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 28px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: 14px 22px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: 0.3px;
+  }
+  .tab:hover { color: var(--text2); }
+  .tab.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+  }
+  .tab-count {
+    background: var(--green-dim);
+    color: var(--green);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-family: var(--mono);
+  }
+
+  /* MAIN */
+  main { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* SCANNER */
+  .scanner-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .control-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  input[type="number"], select {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    outline: none;
+    transition: border 0.2s;
+    min-width: 120px;
+  }
+  input[type="number"]:focus, select:focus {
+    border-color: var(--green);
+  }
+  select option { background: var(--bg3); }
+
+  .btn {
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary {
+    background: var(--green);
+    color: var(--bg);
+  }
+  .btn-primary:hover { background: var(--green2); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+  .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .status-item { display: flex; align-items: center; gap: 6px; }
+  .status-dot { width:6px; height:6px; border-radius:50%; }
+  .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.orange { background: var(--orange); }
+  .status-dot.red { background: var(--red); }
+
+  /* TABLE */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  thead th {
+    background: var(--bg3);
+    color: var(--text3);
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text2); }
+  thead th.sort-asc::after { content: ' ↑'; color: var(--green); }
+  thead th.sort-desc::after { content: ' ↓'; color: var(--green); }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: var(--bg3); }
+  tbody tr:last-child { border-bottom: none; }
+  td {
+    padding: 11px 14px;
+    white-space: nowrap;
+  }
+  .coin-cell {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .coin-icon {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .pos-green { color: var(--green); font-weight: 700; }
+  .pos-red { color: var(--red); font-weight: 700; }
+  .pos-orange { color: var(--orange); }
+
+  .protocol-badge {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border: 1px solid rgba(77,166,255,0.15);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* Direction cells */
+  .long-cell {
+    background: rgba(0,229,160,0.04);
+    color: var(--green);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,229,160,0.15);
+    display: inline-block;
+  }
+  .short-cell {
+    background: rgba(255,77,106,0.06);
+    color: var(--red);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,77,106,0.15);
+    display: inline-block;
+  }
+
+  /* STARS */
+  .stars { color: var(--green); font-size: 12px; letter-spacing: -1px; }
+  .stars.r2 { color: var(--orange); }
+  .stars.r1 { color: var(--red); }
+
+  .risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .risk-low { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,229,160,0.15); }
+  .risk-med { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(255,170,0,0.15); }
+  .risk-high { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,77,106,0.15); }
+
+  .simulate-btn {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 5px;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-family: var(--sans);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.2px;
+  }
+  .simulate-btn:hover {
+    background: var(--green);
+    color: var(--bg);
+  }
+
+  /* LOADING */
+  .loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--red-dim);
+    border: 1px solid rgba(255,77,106,0.2);
+    border-radius: 8px;
+  }
+
+  /* SIMULATEUR */
+  .sim-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+  }
+  .card-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+    letter-spacing: 0.3px;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    width: 3px; height: 14px;
+    background: var(--green);
+    border-radius: 2px;
+  }
+
+  .sim-input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 14px;
+  }
+  .sim-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    letter-spacing: 0.5px;
+  }
+  .sim-input {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    outline: none;
+    width: 100%;
+    transition: border 0.2s;
+  }
+  .sim-input:focus { border-color: var(--green); }
+
+  .lever-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .lever-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.2s;
+  }
+  .lever-btn:hover, .lever-btn.active {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--green-dim);
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .result-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .result-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .result-value {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .result-value.warn { color: var(--orange); }
+  .result-value.danger { color: var(--red); }
+  .result-sub {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+
+  /* RISK BREAKDOWN */
+  .risk-breakdown { display: flex; flex-direction: column; gap: 10px; }
+  .risk-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .risk-name {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    width: 200px;
+    flex-shrink: 0;
+  }
+  .risk-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .risk-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .risk-score-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    width: 24px;
+    text-align: right;
+  }
+
+  /* COIN SELECT */
+  .coin-search {
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .coin-search input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    outline: none;
+  }
+  .coin-search input:focus { border-color: var(--green); }
+  .coin-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0; right: 0;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 50;
+    display: none;
+  }
+  .coin-dropdown.open { display: block; }
+  .coin-option {
+    padding: 9px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .coin-option:hover { background: var(--bg2); color: var(--green); }
+  .coin-option:last-child { border-bottom: none; }
+
+  /* ALERTES */
+  .alert-form {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .alert-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .alert-list { display: flex; flex-direction: column; gap: 10px; }
+  .alert-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .alert-item.triggered {
+    border-color: rgba(0,229,160,0.3);
+    background: var(--green-dim);
+  }
+  .alert-info { flex: 1; }
+  .alert-name {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+  .alert-detail {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .alert-delete {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    border-radius: 4px;
+    padding: 4px 9px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .alert-delete:hover { border-color: var(--red); color: var(--red); }
+  .alert-triggered-badge {
+    background: var(--green);
+    color: var(--bg);
+    font-size: 9px;
+    font-family: var(--mono);
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  .info-box {
+    background: var(--blue-dim);
+    border: 1px solid rgba(77,166,255,0.15);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .info-box strong { color: var(--blue); }
+
+  .guide-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .guide-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--green-dim);
+    border: 1px solid rgba(0,229,160,0.2);
+    color: var(--green);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.6;
+    padding-top: 5px;
+  }
+  .step-text strong { color: var(--text); }
+
+  /* TOOLTIP */
+  .tooltip-wrap { position: relative; display: inline-block; }
+  .tooltip-icon {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    font-size: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: help;
+    font-family: var(--mono);
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .tooltip-box {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    white-space: nowrap;
+    z-index: 200;
+    pointer-events: none;
+    line-height: 1.5;
+    max-width: 260px;
+    white-space: normal;
+    text-align: left;
+  }
+  .tooltip-wrap:hover .tooltip-box { display: block; }
+
+  .section-title {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  .section-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 22px;
+    letter-spacing: 0.3px;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text3);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  /* NOTIFICATION */
+  .notif {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg3);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    z-index: 1000;
+    max-width: 320px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    transform: translateX(140%);
+    transition: transform 0.3s ease;
+  }
+  .notif.show { transform: translateX(0); }
+  .notif strong { color: var(--green); display: block; margin-bottom: 4px; }
+
+  /* CHART */
+  .chart-wrap {
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 12px;
+  }
+  canvas { width: 100% !important; }
+
+  .refresh-info {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-left: auto;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    BASIS SCANNER
+  </div>
+  <div class="header-right">
+    <span class="refresh-info" id="last-update">—</span>
+    <span class="live-badge">⬤ LIVE</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('scanner')">
+    📡 Scanner
+    <span class="tab-count" id="count-badge">—</span>
+  </div>
+  <div class="tab" onclick="switchTab('simulateur')">🧮 Simulateur</div>
+  <div class="tab" onclick="switchTab('alertes')">🔔 Alertes <span class="tab-count" id="alert-count">0</span></div>
+</div>
+
+<main>
+
+<!-- ========== SCANNER ========== -->
+<div class="tab-content active" id="tab-scanner">
+  <div class="section-title">Scanner de Funding Rates</div>
+  <div class="section-sub">Données live Hyperliquid · Rafraîchissement auto toutes les 5 min · Seulement les marchés sans KYC</div>
+
+  <div class="info-box">
+    <strong>Comment lire ce tableau ?</strong><br>
+    <strong>LONG SPOT</strong> = tu achètes l'actif réel dans ton wallet (ex: via Uniswap).
+    <strong>SHORT PERP</strong> = tu ouvres un short sur le contrat perpétuel du protocole indiqué.
+    Tu encaisses le funding rate tant que les longs paient les shorts. Tu es delta-neutral (le prix ne t'impacte pas).
+  </div>
+
+  <div class="scanner-controls">
+    <div class="control-group">
+      <span class="control-label">APR MIN (%)</span>
+      <input type="number" id="filter-apr" value="20" min="0" max="1000" step="5">
+    </div>
+    <div class="control-group">
+      <span class="control-label">SCORE RISQUE MIN</span>
+      <select id="filter-risk">
+        <option value="0">Tous</option>
+        <option value="3" selected>≥ 3 étoiles</option>
+        <option value="4">≥ 4 étoiles</option>
+        <option value="5">5 étoiles seulement</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <span class="control-label">PROTOCOLE</span>
+      <select id="filter-protocol">
+        <option value="all">Tous</option>
+        <option value="Hyperliquid">Hyperliquid</option>
+        <option value="dYdX">dYdX</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:8px;">
+      <button class="btn btn-primary" onclick="applyFilters()">Filtrer</button>
+      <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
+      <button class="btn btn-ghost" onclick="loadData()">↻ Actualiser</button>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="status-dot green"></div>
+      <span>Hyperliquid</span>
+    </div>
+    <div class="status-item">
+      <div class="status-dot" id="dydx-dot" style="background:var(--text3)"></div>
+      <span>dYdX</span>
+    </div>
+    <div class="status-item" id="status-text">Chargement des données...</div>
+    <span class="refresh-info" id="countdown-text">Prochain refresh : —</span>
+  </div>
+
+  <div id="scanner-table-wrap">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      Connexion à Hyperliquid...
+    </div>
+  </div>
+</div>
+
+<!-- ========== SIMULATEUR ========== -->
+<div class="tab-content" id="tab-simulateur">
+  <div class="section-title">Simulateur de Position</div>
+  <div class="section-sub">Calcule ton rendement et ton niveau de risque avant d'entrer en position</div>
+
+  <div class="sim-grid">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">Paramètres de la position</div>
+
+        <div class="sim-input-row">
+          <label class="sim-label">ACTIF</label>
+          <div class="coin-search">
+            <input type="text" id="sim-coin-input" placeholder="Ex: BTC, ETH, SOL..." autocomplete="off" oninput="filterCoinDropdown(this.value)" onfocus="openDropdown()" onblur="setTimeout(closeDropdown,150)">
+            <div class="coin-dropdown" id="coin-dropdown"></div>
+          </div>
+        </div>
+
+        <div class="sim-input-row">
+          <label class="sim-label">CAPITAL TOTAL ($)</label>
+          <input type="number" class="sim-input" id="sim-capital" value="1000" min="50" oninput="calculate()">
+        </div>
+
+        <div class="sim-input-row">
+          <label class="sim-label">LEVIER</label>
+          <div class="lever-row">
+            <button class="lever-btn active" onclick="setLever(1, this)">1×</button>
+            <button class="lever-btn" onclick="setLever(2, this)">2×</button>
+            <button class="lever-btn" onclick="setLever(3, this)">3×</button>
+            <button class="lever-btn" onclick="setLever(5, this)">5×</button>
+          </div>
+        </div>
+
+        <div class="sim-input-row">
+          <label class="sim-label">FUNDING APR (%)</label>
+          <input type="number" class="sim-input" id="sim-apr" value="80" min="0" step="0.1" oninput="calculate()">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Guide d'exécution</div>
+        <div id="execution-guide">
+          <div class="empty-state">Sélectionne un actif pour voir le guide</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">Résultats estimés</div>
+        <div class="result-grid" id="sim-results">
+          <div class="result-card">
+            <div class="result-label">Par jour</div>
+            <div class="result-value" id="r-day">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Par semaine</div>
+            <div class="result-value" id="r-week">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Par mois</div>
+            <div class="result-value" id="r-month">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Par an</div>
+            <div class="result-value" id="r-year">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Capital spot requis</div>
+            <div class="result-value" id="r-spot" style="font-size:15px">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Marge perp requise
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">La marge minimum à déposer sur le protocole pour ouvrir le short. = Capital / Levier.</span>
+              </span>
+            </div>
+            <div class="result-value" id="r-margin" style="font-size:15px">—</div>
+          </div>
+          <div class="result-card" style="grid-column:1/-1;">
+            <div class="result-label">Distance de liquidation
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">À quel % de baisse de prix tu es liquidé sur ton short. Plus c'est élevé, plus tu es en sécurité.</span>
+              </span>
+            </div>
+            <div class="result-value" id="r-liq">—</div>
+            <div class="result-sub" id="r-liq-sub"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Score de risque détaillé</div>
+        <div class="risk-breakdown" id="risk-breakdown">
+          <div class="empty-state">Sélectionne un actif pour voir le scoring</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ALERTES ========== -->
+<div class="tab-content" id="tab-alertes">
+  <div class="section-title">Alertes de Funding Rate</div>
+  <div class="section-sub">Reçois une notification navigateur quand un seuil est franchi</div>
+
+  <div class="info-box">
+    <strong>Important :</strong> Les alertes fonctionnent uniquement quand cet onglet est ouvert dans ton navigateur.
+    Autorise les notifications quand le navigateur te le demande.
+  </div>
+
+  <div class="alert-form card">
+    <div class="card-title">Créer une alerte</div>
+    <div class="alert-row">
+      <div class="control-group">
+        <span class="control-label">ACTIF</span>
+        <input type="text" id="alert-coin" placeholder="BTC" style="min-width:90px;">
+      </div>
+      <div class="control-group">
+        <span class="control-label">CONDITION</span>
+        <select id="alert-cond">
+          <option value="gt">APR &gt; seuil</option>
+          <option value="lt">APR &lt; seuil</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <span class="control-label">SEUIL APR (%)</span>
+        <input type="number" id="alert-threshold" value="100" min="0">
+      </div>
+      <div class="control-group">
+        <span class="control-label">PROTOCOLE</span>
+        <select id="alert-protocol">
+          <option value="Hyperliquid">Hyperliquid</option>
+          <option value="dYdX">dYdX</option>
+          <option value="all">Tous</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="btn btn-primary" onclick="addAlert()">+ Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="alert-list">
+    <div class="empty-state">Aucune alerte configurée</div>
+  </div>
+</div>
+
+</main>
+
+<div class="notif" id="notif">
+  <strong id="notif-title"></strong>
+  <span id="notif-body"></span>
+</div>
+
+<script>
+// ============================================================
+// DATA & STATE
+// ============================================================
+let allMarkets = [];
+let filteredMarkets = [];
+let alerts = JSON.parse(localStorage.getItem('basis_alerts') || '[]');
+let lever = 1;
+let refreshInterval = null;
+let countdown = 300;
+let selectedSimCoin = null;
+
+// Protocol risk scores (static, based on audits/history/TVL)
+const PROTOCOL_RISK = {
+  'Hyperliquid': { score: 4, note: 'Protocole mature, audité, TVL élevé. Risque de centralisation (orderbook hybride).' },
+  'dYdX':        { score: 5, note: 'Chain souveraine Cosmos, audité, décentralisé. Le plus sûr des DEX perp.' },
+};
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  const tabs = ['scanner','simulateur','alertes'];
+  const idx = tabs.indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ============================================================
+// FETCH HYPERLIQUID
+// ============================================================
+async function fetchHyperliquid() {
+  const res = await fetch('https://api.hyperliquid.xyz/info', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'metaAndAssetCtxs' })
+  });
+  if (!res.ok) throw new Error('Hyperliquid HTTP ' + res.status);
+  const data = await res.json();
+  const universe = data[0].universe;
+  const ctxs = data[1];
+  return universe.map((asset, i) => {
+    const ctx = ctxs[i];
+    const fundingRateRaw = parseFloat(ctx.funding); // per hour
+    const aprRaw = fundingRateRaw * 8760 * 100;      // annualized %
+    const oi = parseFloat(ctx.openInterest) || 0;
+    const vol24 = parseFloat(ctx.dayNtlVlm) || 0;
+    return {
+      coin: asset.name,
+      protocol: 'Hyperliquid',
+      fundingRate: fundingRateRaw,
+      apr: aprRaw,
+      oi: oi,
+      vol24: vol24,
+      markPrice: parseFloat(ctx.markPx) || 0,
+    };
+  }).filter(m => !isNaN(m.apr));
+}
+
+// ============================================================
+// FETCH dYdX v4
+// ============================================================
+async function fetchDydx() {
+  try {
+    const res = await fetch('https://indexer.dydx.trade/v4/perpetualMarkets?limit=100');
+    if (!res.ok) throw new Error('dYdX HTTP ' + res.status);
+    const data = await res.json();
+    const markets = Object.values(data.markets || {});
+    document.getElementById('dydx-dot').style.background = 'var(--green)';
+    return markets.map(m => {
+      const fundingRateRaw = parseFloat(m.nextFundingRate) || 0;
+      const aprRaw = fundingRateRaw * 8760 * 100;
+      return {
+        coin: m.baseAsset || m.ticker.split('-')[0],
+        protocol: 'dYdX',
+        fundingRate: fundingRateRaw,
+        apr: aprRaw,
+        oi: parseFloat(m.openInterest) || 0,
+        vol24: parseFloat(m.volume24H) || 0,
+        markPrice: parseFloat(m.oraclePrice) || 0,
+      };
+    }).filter(m => !isNaN(m.apr));
+  } catch(e) {
+    console.warn('dYdX fetch failed:', e.message);
+    document.getElementById('dydx-dot').style.background = 'var(--red)';
+    return [];
+  }
+}
+
+// ============================================================
+// SCORING
+// ============================================================
+function scoreMarket(market) {
+  // 1. Stabilité funding (on approxime avec abs(apr) vs volatilité implicite)
+  // Without history we use magnitude as a proxy: extreme rates are unstable
+  const absApr = Math.abs(market.apr);
+  let stabScore;
+  if (absApr < 50) stabScore = 5;
+  else if (absApr < 120) stabScore = 4;
+  else if (absApr < 250) stabScore = 3;
+  else if (absApr < 400) stabScore = 2;
+  else stabScore = 1;
+
+  // 2. Liquidité (OI proxy)
+  let liqScore;
+  const oiM = market.oi;
+  if (oiM > 10000000) liqScore = 5;
+  else if (oiM > 1000000) liqScore = 4;
+  else if (oiM > 200000) liqScore = 3;
+  else if (oiM > 50000) liqScore = 2;
+  else liqScore = 1;
+
+  // 3. Protocole
+  const protScore = (PROTOCOL_RISK[market.protocol] || { score: 3 }).score;
+
+  // 4. Risque de liquidation (à x1 pas de risque, augmente avec levier)
+  // On stocke le score brut du protocole ici, le levier impacte dans la simulation
+  const liqRisk = protScore;
+
+  // 5. Tendance funding (APR > 0 = positif, on note positivement)
+  const trendScore = market.apr > 0 ? 4 : 2;
+
+  // Score global pondéré
+  const global = (stabScore * 0.30) + (liqScore * 0.25) + (protScore * 0.20) + (liqRisk * 0.15) + (trendScore * 0.10);
+
+  return {
+    global: Math.round(global * 10) / 10,
+    stab: stabScore,
+    liq: liqScore,
+    protocol: protScore,
+    liqRisk: liqRisk,
+    trend: trendScore,
+  };
+}
+
+function riskClass(score) {
+  if (score >= 4) return 'risk-low';
+  if (score >= 2.5) return 'risk-med';
+  return 'risk-high';
+}
+function riskLabel(score) {
+  if (score >= 4) return '✓ Faible';
+  if (score >= 2.5) return '⚠ Modéré';
+  return '✗ Élevé';
+}
+function stars(score) {
+  const full = Math.round(score);
+  const cls = full >= 4 ? '' : full >= 3 ? 'r2' : 'r1';
+  return `<span class="stars ${cls}">${'★'.repeat(full)}${'☆'.repeat(5-full)}</span>`;
+}
+
+// ============================================================
+// FORMAT HELPERS
+// ============================================================
+function fmtApr(v) {
+  const cls = v >= 0 ? 'pos-green' : 'pos-red';
+  return `<span class="${cls}">${v >= 0 ? '+' : ''}${v.toFixed(2)}%</span>`;
+}
+function fmtUsd(v) {
+  if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
+  return v.toFixed(0);
+}
+
+// ============================================================
+// RENDER TABLE
+// ============================================================
+let sortCol = 'apr';
+let sortDir = -1;
+
+function renderTable(markets) {
+  const wrap = document.getElementById('scanner-table-wrap');
+  if (!markets.length) {
+    wrap.innerHTML = `<div class="error-state">Aucun marché ne correspond aux filtres actuels.</div>`;
+    return;
+  }
+
+  document.getElementById('count-badge').textContent = markets.length;
+
+  const sorted = [...markets].sort((a,b) => {
+    let va = a[sortCol] !== undefined ? a[sortCol] : (a.score ? a.score.global : 0);
+    let vb = b[sortCol] !== undefined ? b[sortCol] : (b.score ? b.score.global : 0);
+    if (sortCol === 'score') { va = a.score.global; vb = b.score.global; }
+    return (va - vb) * sortDir;
+  });
+
+  const headers = [
+    { key:'coin', label:'Actif' },
+    { key:'protocol', label:'Protocole' },
+    { key:'apr', label:'APR Live' },
+    { key:'long', label:'✅ Long Spot ici', sort:false },
+    { key:'short', label:'🔴 Short Perp ici', sort:false },
+    { key:'oi', label:'Open Interest' },
+    { key:'score', label:'Score Risque' },
+    { key:'action', label:'', sort:false },
+  ];
+
+  let thead = '<thead><tr>';
+  headers.forEach(h => {
+    if (h.sort === false) {
+      thead += `<th>${h.label}</th>`;
+    } else {
+      const cls = sortCol === h.key ? (sortDir === -1 ? 'sort-desc' : 'sort-asc') : '';
+      thead += `<th class="${cls}" onclick="sortBy('${h.key}')">${h.label}</th>`;
+    }
+  });
+  thead += '</tr></thead>';
+
+  let tbody = '<tbody>';
+  sorted.forEach(m => {
+    const sc = m.score;
+    const initials = m.coin.slice(0,3).toUpperCase();
+    tbody += `<tr>
+      <td><div class="coin-cell"><div class="coin-icon">${initials}</div>${m.coin}</div></td>
+      <td><span class="protocol-badge">${m.protocol}</span></td>
+      <td>${fmtApr(m.apr)}</td>
+      <td><span class="long-cell">↑ SPOT WALLET</span></td>
+      <td><span class="short-cell">↓ SHORT ${m.protocol.toUpperCase()}</span></td>
+      <td style="color:var(--text2)">$${fmtUsd(m.oi)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${stars(sc.global)}
+          <span class="risk-badge ${riskClass(sc.global)}">${riskLabel(sc.global)}</span>
+        </div>
+      </td>
+      <td><button class="simulate-btn" onclick="openSimulator('${m.coin}', ${m.apr.toFixed(4)})">Simuler →</button></td>
+    </tr>`;
+  });
+  tbody += '</tbody>';
+
+  wrap.innerHTML = `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = -1; }
+  renderTable(filteredMarkets);
+}
+
+// ============================================================
+// FILTERS
+// ============================================================
+function applyFilters() {
+  const minApr = parseFloat(document.getElementById('filter-apr').value) || 0;
+  const minRisk = parseFloat(document.getElementById('filter-risk').value) || 0;
+  const proto = document.getElementById('filter-protocol').value;
+
+  filteredMarkets = allMarkets.filter(m => {
+    if (m.apr < minApr) return false;
+    if (m.score.global < minRisk) return false;
+    if (proto !== 'all' && m.protocol !== proto) return false;
+    return true;
+  });
+  renderTable(filteredMarkets);
+}
+
+function resetFilters() {
+  document.getElementById('filter-apr').value = 20;
+  document.getElementById('filter-risk').value = 3;
+  document.getElementById('filter-protocol').value = 'all';
+  filteredMarkets = [...allMarkets];
+  renderTable(filteredMarkets);
+}
+
+// ============================================================
+// LOAD DATA
+// ============================================================
+async function loadData() {
+  document.getElementById('scanner-table-wrap').innerHTML =
+    `<div class="loading-state"><div class="spinner"></div>Connexion à Hyperliquid...</div>`;
+  document.getElementById('status-text').textContent = 'Chargement...';
+
+  try {
+    const [hl, dy] = await Promise.all([fetchHyperliquid(), fetchDydx()]);
+    const combined = [...hl, ...dy];
+    combined.forEach(m => { m.score = scoreMarket(m); });
+    combined.sort((a,b) => b.apr - a.apr);
+    allMarkets = combined;
+    filteredMarkets = [...combined];
+
+    applyFilters();
+    checkAlerts();
+
+    const now = new Date();
+    document.getElementById('last-update').textContent =
+      `Mis à jour ${now.toLocaleTimeString('fr-FR')}`;
+    document.getElementById('status-text').textContent =
+      `${hl.length} marchés Hyperliquid · ${dy.length} marchés dYdX`;
+
+    // Populate coin dropdown for simulator
+    populateCoinDropdown(combined);
+
+    // Restart countdown
+    countdown = 300;
+  } catch(e) {
+    document.getElementById('scanner-table-wrap').innerHTML =
+      `<div class="error-state">
+        Erreur de connexion : ${e.message}<br><br>
+        Si tu utilises Brave, clique sur le lion 🦁 dans la barre d'adresse et désactive les Shields pour ce site.
+        Puis recharge la page.
+      </div>`;
+    document.getElementById('status-text').textContent = 'Erreur de connexion';
+  }
+}
+
+// ============================================================
+// SIMULATOR
+// ============================================================
+function openSimulator(coin, apr) {
+  switchTab('simulateur');
+  document.getElementById('sim-coin-input').value = coin;
+  document.getElementById('sim-apr').value = apr.toFixed(2);
+  selectedSimCoin = coin;
+  calculate();
+  renderExecutionGuide(coin);
+  renderRiskBreakdown(coin);
+}
+
+function setLever(l, btn) {
+  lever = l;
+  document.querySelectorAll('.lever-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  calculate();
+  renderRiskBreakdown(document.getElementById('sim-coin-input').value);
+}
+
+function calculate() {
+  const capital = parseFloat(document.getElementById('sim-capital').value) || 0;
+  const apr = parseFloat(document.getElementById('sim-apr').value) || 0;
+
+  const effectiveCapital = capital * lever;
+  const dailyReturn = effectiveCapital * (apr / 100) / 365;
+  const weekReturn = dailyReturn * 7;
+  const monthReturn = dailyReturn * 30;
+  const yearReturn = effectiveCapital * (apr / 100);
+
+  const spotRequired = capital;
+  const marginRequired = capital / lever;
+  const liqDistance = (1 / lever) * 100 * 0.85; // 85% of theoretical, accounting for fees
+
+  const liqClass = liqDistance > 40 ? '' : liqDistance > 20 ? 'warn' : 'danger';
+
+  document.getElementById('r-day').textContent = '$' + dailyReturn.toFixed(2);
+  document.getElementById('r-week').textContent = '$' + weekReturn.toFixed(2);
+  document.getElementById('r-month').textContent = '$' + monthReturn.toFixed(2);
+  document.getElementById('r-year').textContent = '$' + yearReturn.toFixed(2);
+  document.getElementById('r-spot').textContent = '$' + spotRequired.toFixed(0);
+  document.getElementById('r-margin').textContent = '$' + marginRequired.toFixed(0);
+  document.getElementById('r-liq').className = 'result-value ' + liqClass;
+  document.getElementById('r-liq').textContent = liqDistance.toFixed(1) + '%';
+  document.getElementById('r-liq-sub').textContent =
+    liqDistance > 40 ? '✓ Zone sûre' :
+    liqDistance > 20 ? '⚠ Surveille le prix' : '✗ Risque élevé — réduis le levier';
+}
+
+function renderRiskBreakdown(coin) {
+  const market = allMarkets.find(m => m.coin === coin);
+  const wrap = document.getElementById('risk-breakdown');
+  if (!market) {
+    wrap.innerHTML = `<div class="empty-state">Actif introuvable dans les données live</div>`;
+    return;
+  }
+  const sc = market.score;
+
+  // Liquidation risk decreases with lever
+  const adjLiqRisk = Math.max(1, sc.liqRisk - Math.floor(lever / 2));
+
+  const dims = [
+    { name: 'Stabilité du funding rate', val: sc.stab, weight: '30%' },
+    { name: 'Liquidité / facilité de sortie', val: sc.liq, weight: '25%' },
+    { name: 'Sécurité du protocole', val: sc.protocol, weight: '20%' },
+    { name: 'Risque de liquidation (×' + lever + ')', val: adjLiqRisk, weight: '15%' },
+    { name: 'Tendance du funding', val: sc.trend, weight: '10%' },
+  ];
+
+  const protNote = (PROTOCOL_RISK[market.protocol] || {}).note || '';
+
+  wrap.innerHTML = dims.map(d => {
+    const pct = (d.val / 5) * 100;
+    const color = d.val >= 4 ? 'var(--green)' : d.val >= 3 ? 'var(--orange)' : 'var(--red)';
+    return `<div class="risk-row">
+      <span class="risk-name">${d.name} <span style="color:var(--text3);font-size:10px">(${d.weight})</span></span>
+      <div class="risk-bar-bg">
+        <div class="risk-bar-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <span class="risk-score-num" style="color:${color}">${d.val}/5</span>
+    </div>`;
+  }).join('') +
+  (protNote ? `<div style="margin-top:10px;padding:10px;background:var(--bg3);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.6;border:1px solid var(--border)">
+    <strong style="color:var(--blue)">Note protocole :</strong> ${protNote}
+  </div>` : '');
+}
+
+function renderExecutionGuide(coin) {
+  const market = allMarkets.find(m => m.coin === coin);
+  const wrap = document.getElementById('execution-guide');
+  if (!market) { wrap.innerHTML = `<div class="empty-state">Actif introuvable</div>`; return; }
+
+  const protocolUrl = market.protocol === 'Hyperliquid'
+    ? 'https://app.hyperliquid.xyz' : 'https://dydx.trade';
+  const protocolName = market.protocol;
+
+  wrap.innerHTML = `<div class="guide-steps">
+    <div class="guide-step">
+      <div class="step-num">1</div>
+      <div class="step-text"><strong>Achète ${coin} en spot</strong><br>
+        Via ton wallet (MetaMask, Rabby) sur Uniswap ou 1inch.<br>
+        Montant = ton capital total. Pas de KYC requis.
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">2</div>
+      <div class="step-text"><strong>Dépose la marge sur ${protocolName}</strong><br>
+        Va sur <a href="${protocolUrl}" target="_blank" style="color:var(--blue)">${protocolUrl}</a>,
+        connecte ton wallet et dépose en USDC/USDT comme marge.
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Ouvre un SHORT ${coin}-PERP</strong><br>
+        Sélectionne ${coin}, choisis levier ×${lever}, direction SHORT.
+        Taille = équivalent de ton capital spot.
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">4</div>
+      <div class="step-text"><strong>Vérifie la delta-neutralité</strong><br>
+        Spot long ≈ Perp short en valeur notionnelle.
+        Tu encaisses le funding toutes les heures.
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="step-num">5</div>
+      <div class="step-text"><strong>Surveille le funding rate</strong><br>
+        Si le rate devient négatif, les shorts paient les longs.
+        Configure une alerte dans l'onglet 🔔 Alertes.
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// COIN DROPDOWN (simulator)
+// ============================================================
+let allCoins = [];
+function populateCoinDropdown(markets) {
+  allCoins = markets.map(m => ({ coin: m.coin, apr: m.apr, protocol: m.protocol }));
+  allCoins.sort((a,b) => b.apr - a.apr);
+}
+function filterCoinDropdown(query) {
+  const dd = document.getElementById('coin-dropdown');
+  const filtered = query
+    ? allCoins.filter(c => c.coin.toLowerCase().includes(query.toLowerCase()))
+    : allCoins.slice(0, 20);
+  dd.innerHTML = filtered.map(c =>
+    `<div class="coin-option" onclick="selectCoin('${c.coin}', ${c.apr.toFixed(4)})">
+      <span>${c.coin}</span>
+      <span style="color:${c.apr >= 0 ? 'var(--green)' : 'var(--red)'}">${c.apr.toFixed(1)}%</span>
+    </div>`
+  ).join('');
+  dd.classList.add('open');
+}
+function selectCoin(coin, apr) {
+  document.getElementById('sim-coin-input').value = coin;
+  document.getElementById('sim-apr').value = apr.toFixed(2);
+  selectedSimCoin = coin;
+  document.getElementById('coin-dropdown').classList.remove('open');
+  calculate();
+  renderExecutionGuide(coin);
+  renderRiskBreakdown(coin);
+}
+function openDropdown() { filterCoinDropdown(document.getElementById('sim-coin-input').value); }
+function closeDropdown() { document.getElementById('coin-dropdown').classList.remove('open'); }
+
+// ============================================================
+// ALERTS
+// ============================================================
+function renderAlerts() {
+  const list = document.getElementById('alert-list');
+  document.getElementById('alert-count').textContent = alerts.length;
+  if (!alerts.length) {
+    list.innerHTML = `<div class="empty-state">Aucune alerte configurée</div>`;
+    return;
+  }
+  list.innerHTML = `<div class="alert-list">${alerts.map((a, i) => `
+    <div class="alert-item ${a.triggered ? 'triggered' : ''}" id="alert-item-${i}">
+      <div class="alert-info">
+        <div class="alert-name">${a.coin} · ${a.protocol}</div>
+        <div class="alert-detail">APR ${a.cond === 'gt' ? '>' : '<'} ${a.threshold}% ${a.triggered ? '· <span style="color:var(--green)">DÉCLENCHÉE</span>' : ''}</div>
+      </div>
+      ${a.triggered ? '<span class="alert-triggered-badge">✓ ACTIVE</span>' : ''}
+      <button class="alert-delete" onclick="deleteAlert(${i})">✕</button>
+    </div>`).join('')}</div>`;
+}
+
+function addAlert() {
+  const coin = document.getElementById('alert-coin').value.trim().toUpperCase();
+  const cond = document.getElementById('alert-cond').value;
+  const threshold = parseFloat(document.getElementById('alert-threshold').value);
+  const protocol = document.getElementById('alert-protocol').value;
+  if (!coin || isNaN(threshold)) return;
+
+  // Request notification permission
+  if (Notification.permission === 'default') Notification.requestPermission();
+
+  alerts.push({ coin, cond, threshold, protocol, triggered: false });
+  localStorage.setItem('basis_alerts', JSON.stringify(alerts));
+  renderAlerts();
+  showNotif('Alerte créée', `${coin} APR ${cond === 'gt' ? '>' : '<'} ${threshold}%`);
+}
+
+function deleteAlert(i) {
+  alerts.splice(i, 1);
+  localStorage.setItem('basis_alerts', JSON.stringify(alerts));
+  renderAlerts();
+}
+
+function checkAlerts() {
+  alerts.forEach((a, i) => {
+    const markets = allMarkets.filter(m =>
+      m.coin === a.coin && (a.protocol === 'all' || m.protocol === a.protocol));
+    markets.forEach(m => {
+      const triggered = a.cond === 'gt' ? m.apr > a.threshold : m.apr < a.threshold;
+      if (triggered && !a.triggered) {
+        a.triggered = true;
+        fireNotification(a, m.apr);
+      }
+      if (!triggered) a.triggered = false;
+    });
+  });
+  localStorage.setItem('basis_alerts', JSON.stringify(alerts));
+  renderAlerts();
+}
+
+function fireNotification(a, currentApr) {
+  showNotif(`🔔 ${a.coin} — Alerte déclenchée`,
+    `APR actuel : ${currentApr.toFixed(1)}% (seuil : ${a.threshold}%)`);
+  if (Notification.permission === 'granted') {
+    new Notification(`Basis Scanner · ${a.coin}`, {
+      body: `APR ${a.cond === 'gt' ? '>' : '<'} ${a.threshold}% — Actuel : ${currentApr.toFixed(1)}%`,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%2300e5a0"/></svg>'
+    });
+  }
+}
+
+// ============================================================
+// TOAST NOTIFICATION
+// ============================================================
+let notifTimer = null;
+function showNotif(title, body) {
+  document.getElementById('notif-title').textContent = title;
+  document.getElementById('notif-body').textContent = body;
+  const el = document.getElementById('notif');
+  el.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ============================================================
+// COUNTDOWN + AUTO REFRESH
+// ============================================================
+function startRefreshLoop() {
+  setInterval(() => {
+    countdown--;
+    if (countdown <= 0) {
+      countdown = 300;
+      loadData();
+    }
+    const m = Math.floor(countdown / 60);
+    const s = countdown % 60;
+    document.getElementById('countdown-text').textContent =
+      `Prochain refresh : ${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderAlerts();
+loadData();
+startRefreshLoop();
+</script>
+</body>
+</html>
