@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Basis Trade Scanner</title>
+<title>Doog — Funding Trade Scanner</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
 
@@ -327,7 +327,23 @@
   .risk-med { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(255,170,0,0.15); }
   .risk-high { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,77,106,0.15); }
 
-  .simulate-btn {
+  .alert-quick-btn {
+    background: rgba(255,170,0,0.08);
+    color: var(--orange);
+    border: 1px solid rgba(255,170,0,0.2);
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-family: var(--sans);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .alert-quick-btn:hover {
+    background: var(--orange);
+    color: var(--bg);
+  }
     background: var(--green-dim);
     color: var(--green);
     border: 1px solid rgba(0,229,160,0.2);
@@ -777,6 +793,43 @@
     color: var(--text3);
     margin-left: auto;
   }
+  .simulate-btn {
+    background: linear-gradient(135deg, rgba(77,166,255,0.15), rgba(77,166,255,0.06));
+    color: var(--blue);
+    border: 1px solid rgba(77,166,255,0.35);
+    border-radius: 5px;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-family: var(--sans);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .simulate-btn:hover {
+    background: var(--blue);
+    color: var(--bg);
+    border-color: var(--blue);
+    box-shadow: 0 0 10px rgba(77,166,255,0.3);
+  }
+  .alert-quick-btn {
+    background: rgba(255,170,0,0.08);
+    color: var(--orange);
+    border: 1px solid rgba(255,170,0,0.25);
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-family: var(--sans);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .alert-quick-btn:hover {
+    background: var(--orange);
+    color: var(--bg);
+    box-shadow: 0 0 10px rgba(255,170,0,0.3);
+  }
 </style>
 </head>
 <body>
@@ -784,7 +837,7 @@
 <header>
   <div class="logo">
     <div class="logo-dot"></div>
-    BASIS SCANNER
+    DOOG · FUNDING SCANNER
   </div>
   <div class="header-right">
     <span class="refresh-info" id="last-update">—</span>
@@ -805,20 +858,25 @@
 
 <!-- ========== SCANNER ========== -->
 <div class="tab-content active" id="tab-scanner">
-  <div class="section-title">Scanner de Funding Rates</div>
+  <div class="section-title">Funding Trade Scanner</div>
   <div class="section-sub">Données live Hyperliquid · Rafraîchissement auto toutes les 5 min · Seulement les marchés sans KYC</div>
 
   <div class="info-box">
     <strong>Comment lire ce tableau ?</strong><br>
-    <strong>LONG SPOT</strong> = tu achètes l'actif réel dans ton wallet (ex: via Uniswap).
-    <strong>SHORT PERP</strong> = tu ouvres un short sur le contrat perpétuel du protocole indiqué.
-    Tu encaisses le funding rate tant que les longs paient les shorts. Tu es delta-neutral (le prix ne t'impacte pas).
+    <strong>LONG SPOT</strong> = tu achètes l'actif réel dans ton wallet (ex: via DefiLlama Swap ou Uniswap).
+    <strong>SHORT PERP</strong> = tu ouvres un short sur le contrat perpétuel du protocole indiqué. Marge en USDC.
+    Tu encaisses le funding rate tant que les longs paient les shorts. Tu es delta-neutral (le prix ne t'impacte pas).<br><br>
+    <strong style="color:var(--red)">APR en rouge (négatif)</strong> = les shorts paient les longs — c'est l'inverse de ce qu'on veut. <strong>À éviter</strong> pour le cash &amp; carry classique. Ces actifs sont filtrés par défaut (APR min &gt; 0).
   </div>
 
   <div class="scanner-controls">
+    <div class="control-group" style="flex:1;min-width:180px;">
+      <span class="control-label">🔍 Recherche</span>
+      <input type="text" id="filter-search" placeholder="Ex: ATOM, HYPE, BTC..." oninput="applyFilters()" style="min-width:unset;width:100%;font-family:var(--sans);font-size:13px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:6px;outline:none;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)'">
+    </div>
     <div class="control-group">
       <span class="control-label">APR MIN (%)</span>
-      <input type="number" id="filter-apr" value="20" min="0" max="1000" step="5">
+      <input type="number" id="filter-apr" value="0" min="-500" max="1000" step="5">
     </div>
     <div class="control-group">
       <span class="control-label">SCORE RISQUE MIN</span>
@@ -841,6 +899,14 @@
       <button class="btn btn-primary" onclick="applyFilters()">Filtrer</button>
       <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
       <button class="btn btn-ghost" onclick="loadData()">↻ Actualiser</button>
+    </div>
+    <div class="control-group" style="justify-content:flex-end;">
+      <span class="control-label">OI SATURÉ</span>
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text2);padding:8px 0;">
+        <input type="checkbox" id="filter-hide-capped" checked onchange="applyFilters()"
+          style="width:14px;height:14px;accent-color:var(--green);cursor:pointer;">
+        Masquer les marchés bloqués
+      </label>
     </div>
   </div>
 
@@ -915,6 +981,8 @@
     <div>
       <div class="card" style="margin-bottom:16px;">
         <div class="card-title">Résultats estimés</div>
+        <!-- SECTION RENDEMENT -->
+        <div style="grid-column:1/-1;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;padding:4px 0 2px;">— Rendement estimé —</div>
         <div class="result-grid" id="sim-results">
           <div class="result-card">
             <div class="result-label">Par jour</div>
@@ -932,28 +1000,81 @@
             <div class="result-label">Par an</div>
             <div class="result-value" id="r-year">—</div>
           </div>
+        </div>
+
+        <!-- SECTION CAPITAL -->
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;padding:14px 0 6px;">— Décomposition du capital —</div>
+        <div class="result-grid">
           <div class="result-card">
-            <div class="result-label">Capital spot requis</div>
+            <div class="result-label">Taille de position (1 côté)
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Le montant que tu saisis. C'est la taille d'UN côté : ton achat spot = ce montant, ton short perp a la même valeur notionnelle.</span>
+              </span>
+            </div>
             <div class="result-value" id="r-spot" style="font-size:15px">—</div>
           </div>
           <div class="result-card">
-            <div class="result-label">Marge perp requise
+            <div class="result-label">Marge perp à déposer
               <span class="tooltip-wrap">
                 <span class="tooltip-icon">?</span>
-                <span class="tooltip-box">La marge minimum à déposer sur le protocole pour ouvrir le short. = Capital / Levier.</span>
+                <span class="tooltip-box">USDC à déposer sur le protocole perp. = Taille ÷ Levier. Avec ×5 sur 1 000$ → 200$ de marge seulement.</span>
               </span>
             </div>
             <div class="result-value" id="r-margin" style="font-size:15px">—</div>
           </div>
-          <div class="result-card" style="grid-column:1/-1;">
+          <div class="result-card">
+            <div class="result-label">✦ Total sorti de ta poche
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Spot acheté + Marge déposée. C'est le montant réel que tu mobilises. Exemple à ×5 sur 1 000$ : 1 000$ spot + 200$ marge = 1 200$.</span>
+              </span>
+            </div>
+            <div class="result-value" id="r-total" style="font-size:18px;color:var(--text)">—</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Taille notionnelle totale
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">La taille réelle de ta position des deux côtés combinés : Long spot + Short perp. = 2× la taille d'un côté. C'est l'exposition totale au marché (neutralisée car delta-neutral).</span>
+              </span>
+            </div>
+            <div class="result-value" id="r-notional" style="font-size:15px;color:var(--text2)">—</div>
+          </div>
+        </div>
+
+        <!-- SECTION LIQUIDATION -->
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;padding:14px 0 6px;">— Gestion du risque de liquidation —</div>
+        <div class="result-grid">
+          <div class="result-card">
             <div class="result-label">Distance de liquidation
               <span class="tooltip-wrap">
                 <span class="tooltip-icon">?</span>
-                <span class="tooltip-box">À quel % de baisse de prix tu es liquidé sur ton short. Plus c'est élevé, plus tu es en sécurité.</span>
+                <span class="tooltip-box">SHORT → tu es liquidé si le PRIX MONTE. Ce % = la hausse du prix que ton short peut absorber avant liquidation. À ×5 : ~17% de hausse suffit à te liquider.</span>
               </span>
             </div>
             <div class="result-value" id="r-liq">—</div>
             <div class="result-sub" id="r-liq-sub"></div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Seuil de liquidation de la marge
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Tu es delta-neutral : si le prix monte, ton spot compense ton short. Mais le protocole ne voit que ta marge perp — pas ton wallet. Si le prix monte vite, la marge perp s'épuise avant que tu puisses réagir. Ce prix = seuil auquel ta marge perp seule est liquidée. Solution : surveille ta marge et rajoute des fonds si le prix s'en approche.</span>
+              </span>
+            </div>
+            <div class="result-value" id="r-liq-price" style="font-size:13px;color:var(--orange)">—</div>
+            <div class="result-sub" style="margin-top:3px;">Prix actuel + {{liqDistancePct}}% → marge perp épuisée</div>
+          </div>
+          <div class="result-card" style="grid-column:1/-1;background:rgba(255,170,0,0.05);border-color:rgba(255,170,0,0.2);">
+            <div class="result-label">⚠ Solde minimum à maintenir sur la marge
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Montant en dessous duquel tu ne dois JAMAIS laisser descendre ta marge sur le protocole. Inclut une marge de sécurité de +12% au-dessus du seuil théorique de liquidation. Si ton solde approche ce chiffre : rajoute de la marge ou ferme la position.</span>
+              </span>
+            </div>
+            <div class="result-value" id="r-min-balance" style="font-size:18px;color:var(--orange)">—</div>
+            <div class="result-sub" style="color:var(--orange);margin-top:4px;">Marge de sécurité intégrée : +12% au-dessus du seuil de liquidation théorique</div>
           </div>
         </div>
       </div>
@@ -1028,11 +1149,53 @@
 // ============================================================
 let allMarkets = [];
 let filteredMarkets = [];
-let alerts = JSON.parse(localStorage.getItem('basis_alerts') || '[]');
+let alerts = JSON.parse(localStorage.getItem('doog_funding_alerts') || '[]');
 let lever = 1;
 let refreshInterval = null;
 let countdown = 300;
 let selectedSimCoin = null;
+
+// ── Chain mapping pour le spot ────────────────────────────────
+// Pour chaque coin, on indique la meilleure chain pour acheter le spot
+// et l'URL DefiLlama Swap correspondante.
+const CHAIN_MAP = {
+  BTC:   { chain: 'Arbitrum', token: 'WBTC',  color: '#f7931a' },
+  ETH:   { chain: 'Ethereum', token: 'ETH',   color: '#627eea' },
+  SOL:   { chain: 'Solana',   token: 'SOL',   color: '#9945ff' },
+  BNB:   { chain: 'BSC',      token: 'BNB',   color: '#f3ba2f' },
+  AVAX:  { chain: 'Avalanche',token: 'AVAX',  color: '#e84142' },
+  MATIC: { chain: 'Polygon',  token: 'MATIC', color: '#8247e5' },
+  POL:   { chain: 'Polygon',  token: 'POL',   color: '#8247e5' },
+  OP:    { chain: 'Optimism', token: 'OP',    color: '#ff0420' },
+  ARB:   { chain: 'Arbitrum', token: 'ARB',   color: '#12aaff' },
+  ATOM:  { chain: 'Cosmos',   token: 'ATOM',  color: '#2e3148' },
+  LINK:  { chain: 'Arbitrum', token: 'LINK',  color: '#375bd2' },
+  UNI:   { chain: 'Arbitrum', token: 'UNI',   color: '#ff007a' },
+  AAVE:  { chain: 'Arbitrum', token: 'AAVE',  color: '#b6509e' },
+  CRV:   { chain: 'Arbitrum', token: 'CRV',   color: '#3a3a3a' },
+  MKR:   { chain: 'Ethereum', token: 'MKR',   color: '#1aab9b' },
+  LDO:   { chain: 'Ethereum', token: 'LDO',   color: '#f0909a' },
+  SNX:   { chain: 'Optimism', token: 'SNX',   color: '#00d1ff' },
+  INJ:   { chain: 'Injective',token: 'INJ',   color: '#00b2ff' },
+  SUI:   { chain: 'Sui',      token: 'SUI',   color: '#4da2ff' },
+  APT:   { chain: 'Aptos',    token: 'APT',   color: '#00c2a8' },
+  TIA:   { chain: 'Celestia', token: 'TIA',   color: '#7b2bf9' },
+  SEI:   { chain: 'Sei',      token: 'SEI',   color: '#9d1c3a' },
+  WLD:   { chain: 'Optimism', token: 'WLD',   color: '#ffffff' },
+  CFX:   { chain: 'Conflux',  token: 'CFX',   color: '#44d7b6' },
+  DOGE:  { chain: 'Arbitrum', token: 'DOGE',  color: '#c2a633' },
+  LTC:   { chain: 'Arbitrum', token: 'LTC',   color: '#bfbbbb' },
+  XRP:   { chain: 'Arbitrum', token: 'XRP',   color: '#346aa9' },
+  ADA:   { chain: 'Arbitrum', token: 'ADA',   color: '#0033ad' },
+  DOT:   { chain: 'Arbitrum', token: 'DOT',   color: '#e6007a' },
+  NEAR:  { chain: 'NEAR',     token: 'NEAR',  color: '#00c08b' },
+  FTM:   { chain: 'Fantom',   token: 'FTM',   color: '#1969ff' },
+  // Fallback : tous les autres → Arbitrum (cheap gas, bonne liquidité DEX)
+};
+
+function getChainInfo(coin) {
+  return CHAIN_MAP[coin.toUpperCase()] || { chain: 'Arbitrum', token: coin, color: '#12aaff' };
+}
 
 // Protocol risk scores (static, based on audits/history/TVL)
 const PROTOCOL_RISK = {
@@ -1219,7 +1382,7 @@ function renderTable(markets) {
     { key:'short', label:'🔴 Short Perp ici', sort:false },
     { key:'oi', label:'Open Interest' },
     { key:'score', label:'Score Risque' },
-    { key:'action', label:'', sort:false },
+    { key:'action', label:'Actions', sort:false },
   ];
 
   let thead = '<thead><tr>';
@@ -1237,12 +1400,30 @@ function renderTable(markets) {
   sorted.forEach(m => {
     const sc = m.score;
     const initials = m.coin.slice(0,3).toUpperCase();
-    tbody += `<tr>
-      <td><div class="coin-cell"><div class="coin-icon">${initials}</div>${m.coin}</div></td>
+    const chain = getChainInfo(m.coin);
+    const isKnown = CHAIN_MAP.hasOwnProperty(m.coin.toUpperCase());
+    const spotLabel = isKnown
+      ? `↑ SPOT <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${chain.color};margin:0 3px;vertical-align:middle;"></span>${chain.chain}`
+      : `↑ SPOT <span style="font-size:9px;background:rgba(155,69,255,0.12);color:#9b45ff;border:1px solid rgba(155,69,255,0.25);border-radius:3px;padding:1px 4px;margin-left:3px;">HL Spot</span>`;
+    const aprNegWarn = m.apr < 0
+      ? `<span style="font-size:9px;color:var(--red);font-family:var(--mono);display:block;margin-top:2px;">⚠ Shorts paient — à éviter</span>`
+      : '';
+    const oiWarn = m.oiCapped
+      ? `<span style="font-size:9px;color:var(--red);font-family:var(--mono);display:block;margin-top:2px;">🚫 OI au plafond — short impossible</span>`
+      : '';
+    const shortCell = m.oiCapped
+      ? `<span class="short-cell" style="background:rgba(255,77,106,0.15);border-color:rgba(255,77,106,0.4);opacity:0.7;">🚫 SHORT BLOQUÉ</span>`
+      : `<span class="short-cell">↓ SHORT ${m.protocol.toUpperCase()}</span>`;
+    const actionBtns = m.oiCapped
+      ? `<span style="font-size:10px;color:var(--red);font-family:var(--mono);padding:0 4px;">Short impossible</span>`
+      : `<button class="simulate-btn" onclick="openSimulator('${m.coin}', ${m.apr.toFixed(4)})">📊 Simuler</button>
+         <button class="alert-quick-btn" onclick="quickAlert('${m.coin}', ${m.apr.toFixed(4)}, '${m.protocol}')">🔔 Alerte</button>`;
+    tbody += `<tr style="${m.oiCapped ? 'opacity:0.55;' : ''}">
+      <td><div class="coin-cell"><div class="coin-icon">${initials}</div>${m.coin}${oiWarn}</div></td>
       <td><span class="protocol-badge">${m.protocol}</span></td>
-      <td>${fmtApr(m.apr)}</td>
-      <td><span class="long-cell">↑ SPOT WALLET</span></td>
-      <td><span class="short-cell">↓ SHORT ${m.protocol.toUpperCase()}</span></td>
+      <td>${fmtApr(m.apr)}${aprNegWarn}</td>
+      <td><span class="long-cell">${spotLabel}</span></td>
+      <td>${shortCell}</td>
       <td style="color:var(--text2)">$${fmtUsd(m.oi)}</td>
       <td>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -1250,7 +1431,7 @@ function renderTable(markets) {
           <span class="risk-badge ${riskClass(sc.global)}">${riskLabel(sc.global)}</span>
         </div>
       </td>
-      <td><button class="simulate-btn" onclick="openSimulator('${m.coin}', ${m.apr.toFixed(4)})">Simuler →</button></td>
+      <td style="display:flex;gap:6px;align-items:center;">${actionBtns}</td>
     </tr>`;
   });
   tbody += '</tbody>';
@@ -1268,25 +1449,53 @@ function sortBy(col) {
 // FILTERS
 // ============================================================
 function applyFilters() {
-  const minApr = parseFloat(document.getElementById('filter-apr').value) || 0;
-  const minRisk = parseFloat(document.getElementById('filter-risk').value) || 0;
-  const proto = document.getElementById('filter-protocol').value;
+  const minApr     = parseFloat(document.getElementById('filter-apr').value) || 0;
+  const minRisk    = parseFloat(document.getElementById('filter-risk').value) || 0;
+  const proto      = document.getElementById('filter-protocol').value;
+  const search     = (document.getElementById('filter-search').value || '').trim().toUpperCase();
+  const hideCapped = document.getElementById('filter-hide-capped').checked;
 
   filteredMarkets = allMarkets.filter(m => {
+    if (search && !m.coin.toUpperCase().includes(search)) return false;
     if (m.apr < minApr) return false;
     if (m.score.global < minRisk) return false;
     if (proto !== 'all' && m.protocol !== proto) return false;
+    if (hideCapped && m.oiCapped) return false;
     return true;
   });
   renderTable(filteredMarkets);
 }
 
 function resetFilters() {
-  document.getElementById('filter-apr').value = 20;
+  document.getElementById('filter-search').value = '';
+  document.getElementById('filter-apr').value = 0;
   document.getElementById('filter-risk').value = 3;
   document.getElementById('filter-protocol').value = 'all';
-  filteredMarkets = [...allMarkets];
+  document.getElementById('filter-hide-capped').checked = true;
+  filteredMarkets = allMarkets.filter(m => m.apr >= 0 && !m.oiCapped);
   renderTable(filteredMarkets);
+}
+
+// ============================================================
+// FETCH OI CAPS (marchés saturés sur Hyperliquid)
+// ============================================================
+let oiCappedCoins = new Set(); // coins dont l'OI est au plafond
+
+async function fetchOICaps() {
+  try {
+    const res = await fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'perpsAtOpenInterestCap' })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    // Retourne une liste de noms de coins au cap
+    oiCappedCoins = new Set(Array.isArray(data) ? data : []);
+    console.log(`OI caps: ${oiCappedCoins.size} marchés saturés`, [...oiCappedCoins]);
+  } catch(e) {
+    console.warn('OI caps fetch failed:', e.message);
+  }
 }
 
 // ============================================================
@@ -1298,9 +1507,12 @@ async function loadData() {
   document.getElementById('status-text').textContent = 'Chargement...';
 
   try {
-    const [hl, dy] = await Promise.all([fetchHyperliquid(), fetchDydx()]);
+    const [hl, dy] = await Promise.all([fetchHyperliquid(), fetchDydx(), fetchOICaps()]);
     const combined = [...hl, ...dy];
-    combined.forEach(m => { m.score = scoreMarket(m); });
+    combined.forEach(m => {
+      m.score = scoreMarket(m);
+      m.oiCapped = (m.protocol === 'Hyperliquid' && oiCappedCoins.has(m.coin));
+    });
     combined.sort((a,b) => b.apr - a.apr);
     allMarkets = combined;
     filteredMarkets = [...combined];
@@ -1311,13 +1523,12 @@ async function loadData() {
     const now = new Date();
     document.getElementById('last-update').textContent =
       `Mis à jour ${now.toLocaleTimeString('fr-FR')}`;
+    const cappedCount = combined.filter(m => m.oiCapped).length;
     document.getElementById('status-text').textContent =
-      `${hl.length} marchés Hyperliquid · ${dy.length} marchés dYdX`;
+      `${hl.length} marchés Hyperliquid · ${dy.length} marchés dYdX` +
+      (cappedCount > 0 ? ` · ⚠ ${cappedCount} OI saturé(s)` : '');
 
-    // Populate coin dropdown for simulator
     populateCoinDropdown(combined);
-
-    // Restart countdown
     countdown = 300;
   } catch(e) {
     document.getElementById('scanner-table-wrap').innerHTML =
@@ -1352,32 +1563,90 @@ function setLever(l, btn) {
 }
 
 function calculate() {
+  // ── Inputs ──────────────────────────────────────────────────
+  // "Capital total" = montant que tu sors de ta poche EN TOUT.
+  // Il se décompose en : achat spot + marge perp.
+  // Le levier s'applique uniquement sur la marge du short perp.
+  // Ex : 1 000 $ à ×5 → spot 1 000 $ + marge 200 $ = 1 200 $ de ta poche.
   const capital = parseFloat(document.getElementById('sim-capital').value) || 0;
-  const apr = parseFloat(document.getElementById('sim-apr').value) || 0;
+  const apr     = parseFloat(document.getElementById('sim-apr').value)     || 0;
 
-  const effectiveCapital = capital * lever;
-  const dailyReturn = effectiveCapital * (apr / 100) / 365;
-  const weekReturn = dailyReturn * 7;
-  const monthReturn = dailyReturn * 30;
-  const yearReturn = effectiveCapital * (apr / 100);
+  // ── Décomposition du capital ─────────────────────────────────
+  const spotRequired   = capital;                  // tu achètes l'actif en entier
+  const marginRequired = capital / lever;          // marge déposée sur le perp
+  const totalOutOfPocket = spotRequired + marginRequired; // total réel sorti de ta poche
+  const notionalSize   = capital;                  // taille notionnelle du short = capital spot
 
-  const spotRequired = capital;
-  const marginRequired = capital / lever;
-  const liqDistance = (1 / lever) * 100 * 0.85; // 85% of theoretical, accounting for fees
+  // ── Rendement ────────────────────────────────────────────────
+  // Le funding est calculé sur la taille notionnelle (pas sur la marge seule)
+  const dailyReturn  = notionalSize * (apr / 100) / 365;
+  const weekReturn   = dailyReturn * 7;
+  const monthReturn  = dailyReturn * 30;
+  const yearReturn   = notionalSize * (apr / 100);
 
-  const liqClass = liqDistance > 40 ? '' : liqDistance > 20 ? 'warn' : 'danger';
+  // ── Liquidation ──────────────────────────────────────────────
+  // SHORT : tu es liquidé si le PRIX MONTE, pas s'il baisse.
+  // Distance = % de hausse du prix supportable avant liquidation.
+  // Théorique : à ×L, le prix peut monter de (1/L)*100% avant liquidation.
+  // On applique un haircut de 15% pour frais + marge de sécurité protocole.
+  const liqDistancePct = (1 / lever) * 100 * 0.85;
 
-  document.getElementById('r-day').textContent = '$' + dailyReturn.toFixed(2);
-  document.getElementById('r-week').textContent = '$' + weekReturn.toFixed(2);
+  // Prix de liquidation d'un SHORT = prix actuel × (1 + distance%)
+  // Si BTC = 100 000$ à ×5 → liq à ~117 000$ (le prix monte contre toi)
+  const market = allMarkets.find(m => m.coin === (document.getElementById('sim-coin-input').value || ''));
+  const markPrice = market ? market.markPrice : 0;
+  const liqPrice  = markPrice > 0 ? markPrice * (1 + liqDistancePct / 100) : null;
+
+  // ── Montant minimum à conserver sur la marge perp ────────────
+  // Quand le prix monte, ta perte non réalisée sur le short grignote ta marge.
+  // Seuil de liquidation théorique = quand la marge restante = marge de maintenance.
+  // On ajoute +12% de tampon de sécurité au-dessus de ce seuil.
+  const SAFETY_BUFFER_PCT = 12;
+  const safetyMarginUsd   = marginRequired * (SAFETY_BUFFER_PCT / 100);
+  const minBalanceToKeep  = marginRequired * (liqDistancePct / 100) + safetyMarginUsd;
+
+  // ── Taille notionnelle totale de la position ─────────────────
+  // Un côté = taille saisie (spot = perp en notionnel pour être delta-neutral)
+  // Total notionnel = spot + perp = 2× la taille saisie
+  const totalNotional = notionalSize * 2;
+
+  // ── Classes couleur ──────────────────────────────────────────
+  const liqClass = liqDistancePct > 40 ? '' : liqDistancePct > 20 ? 'warn' : 'danger';
+
+  // ── Affichage ─────────────────────────────────────────────────
+  document.getElementById('r-day').textContent   = '$' + dailyReturn.toFixed(2);
+  document.getElementById('r-week').textContent  = '$' + weekReturn.toFixed(2);
   document.getElementById('r-month').textContent = '$' + monthReturn.toFixed(2);
-  document.getElementById('r-year').textContent = '$' + yearReturn.toFixed(2);
-  document.getElementById('r-spot').textContent = '$' + spotRequired.toFixed(0);
-  document.getElementById('r-margin').textContent = '$' + marginRequired.toFixed(0);
-  document.getElementById('r-liq').className = 'result-value ' + liqClass;
-  document.getElementById('r-liq').textContent = liqDistance.toFixed(1) + '%';
+  document.getElementById('r-year').textContent  = '$' + yearReturn.toFixed(2);
+
+  document.getElementById('r-spot').textContent    = '$' + spotRequired.toFixed(0);
+  document.getElementById('r-margin').textContent  = '$' + marginRequired.toFixed(0);
+  document.getElementById('r-total').textContent   = '$' + totalOutOfPocket.toFixed(0);
+  document.getElementById('r-notional').textContent = '$' + totalNotional.toFixed(0);
+
+  document.getElementById('r-liq').className    = 'result-value ' + liqClass;
+  document.getElementById('r-liq').textContent  = liqDistancePct.toFixed(1) + '%';
+
+  // Prix de liquidation en $
+  const liqPriceEl = document.getElementById('r-liq-price');
+  if (liqPrice) {
+    liqPriceEl.textContent = '≈ $' + liqPrice.toLocaleString('fr-FR', {maximumFractionDigits:2});
+  } else {
+    liqPriceEl.textContent = 'Sélectionne un actif via le Scanner';
+  }
+  // Mise à jour du sous-texte dynamique
+  const liqSubEl = liqPriceEl.nextElementSibling;
+  if (liqSubEl && markPrice > 0) {
+    liqSubEl.textContent = `Prix actuel $${markPrice.toLocaleString('fr-FR',{maximumFractionDigits:2})} + ${liqDistancePct.toFixed(1)}% de hausse → marge perp liquidée`;
+  } else if (liqSubEl) {
+    liqSubEl.textContent = 'Sélectionne un actif via le Scanner pour voir le prix actuel';
+  }
+
+  // Montant minimum à conserver
+  document.getElementById('r-min-balance').textContent = '$' + minBalanceToKeep.toFixed(0);
   document.getElementById('r-liq-sub').textContent =
-    liqDistance > 40 ? '✓ Zone sûre' :
-    liqDistance > 20 ? '⚠ Surveille le prix' : '✗ Risque élevé — réduis le levier';
+    liqDistancePct > 40 ? '✓ Zone sûre' :
+    liqDistancePct > 20 ? '⚠ Surveille le prix' : '✗ Risque élevé — réduis le levier';
 }
 
 function renderRiskBreakdown(coin) {
@@ -1423,44 +1692,94 @@ function renderExecutionGuide(coin) {
   const wrap = document.getElementById('execution-guide');
   if (!market) { wrap.innerHTML = `<div class="empty-state">Actif introuvable</div>`; return; }
 
+  const oiBlocked = m.oiCapped;
+  const oiWarningStep = oiBlocked
+    ? `<div class="guide-step" style="background:rgba(255,77,106,0.06);border:1px solid rgba(255,77,106,0.2);border-radius:8px;padding:12px;">
+        <div class="step-num" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,77,106,0.3);">🚫</div>
+        <div class="step-text" style="color:var(--red);">
+          <strong>MARCHÉ BLOQUÉ — Short impossible actuellement</strong><br>
+          L'open interest de ${coin} sur ${protocolName} a atteint son plafond maximum.<br>
+          Tu ne peux pas ouvrir de short perp pour le moment.<br>
+          <span style="color:var(--text2);">N'achète pas le spot avant que le short soit disponible. Surveille via une alerte.</span>
+        </div>
+      </div>`
+    : `<div class="guide-step" style="background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.15);border-radius:8px;padding:12px;">
+        <div class="step-num" style="background:var(--green-dim);color:var(--green);">✓</div>
+        <div class="step-text">
+          <strong>Vérification préalable — OI disponible</strong><br>
+          <span style="color:var(--green);">✓ Le short est ouvert</span> — l'open interest n'a pas atteint son plafond.<br>
+          <span style="color:var(--text3);">Rappel : achète toujours le spot APRÈS avoir vérifié que le short est disponible.</span>
+        </div>
+      </div>`;
+  const chain = getChainInfo(coin);
   const protocolUrl = market.protocol === 'Hyperliquid'
     ? 'https://app.hyperliquid.xyz' : 'https://dydx.trade';
   const protocolName = market.protocol;
+  const defillamaUrl = `https://swap.defillama.com/?chain=${chain.chain.toLowerCase()}&to=${chain.token}`;
+
+  // ── Étape 1 : deux versions selon le token ──────────────────
+  const step1 = isKnownToken
+    ? `<div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <strong>Achète ${coin} en spot sur ${chain.chain}</strong><br>
+          Via <a href="${defillamaUrl}" target="_blank" style="color:var(--blue)">DefiLlama Swap → ${chain.chain}</a>
+          dans ton wallet (MetaMask, Rabby). Pas de KYC requis.<br>
+          <span style="color:var(--text3)">Token : ${chain.token} · Chain : ${chain.chain}</span>
+        </div>
+      </div>`
+    : `<div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <strong>Achète ${coin} en spot sur Hyperliquid Spot</strong><br>
+          Ce token est exotique — il n'est généralement pas disponible sur les DEX classiques.<br>
+          Va sur <a href="https://app.hyperliquid.xyz/trade/${coin}" target="_blank" style="color:var(--blue)">Hyperliquid Spot</a>
+          et achète ${coin} directement là-bas.
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <strong>Withdraw immédiatement vers ton wallet</strong><br>
+          Une fois acheté, <strong style="color:var(--orange)">retire le spot vers ton wallet externe</strong>
+          (MetaMask, Rabby) via le menu Withdraw de Hyperliquid.<br>
+          <span style="color:var(--orange)">⚠ Vérifie que le withdraw est disponible pour ${coin} avant d'acheter.</span><br>
+          <span style="color:var(--text3)">Pourquoi ? Ton spot sera dans ton wallet — hors du risque protocole Hyperliquid.</span>
+        </div>
+      </div>`;
+
+  // Numérotation des étapes suivantes : décalée de 1 si token exotique (une étape en plus)
+  const n = isKnownToken ? [2, 3, 4, 5] : [3, 4, 5, 6];
 
   wrap.innerHTML = `<div class="guide-steps">
+    ${oiWarningStep}
+    ${step1}
     <div class="guide-step">
-      <div class="step-num">1</div>
-      <div class="step-text"><strong>Achète ${coin} en spot</strong><br>
-        Via ton wallet (MetaMask, Rabby) sur Uniswap ou 1inch.<br>
-        Montant = ton capital total. Pas de KYC requis.
-      </div>
-    </div>
-    <div class="guide-step">
-      <div class="step-num">2</div>
-      <div class="step-text"><strong>Dépose la marge sur ${protocolName}</strong><br>
+      <div class="step-num">${n[0]}</div>
+      <div class="step-text"><strong>Dépose la marge USDC sur ${protocolName}</strong><br>
         Va sur <a href="${protocolUrl}" target="_blank" style="color:var(--blue)">${protocolUrl}</a>,
-        connecte ton wallet et dépose en USDC/USDT comme marge.
+        connecte ton wallet et dépose de l'USDC comme marge pour le short.
       </div>
     </div>
     <div class="guide-step">
-      <div class="step-num">3</div>
+      <div class="step-num">${n[1]}</div>
       <div class="step-text"><strong>Ouvre un SHORT ${coin}-PERP</strong><br>
-        Sélectionne ${coin}, choisis levier ×${lever}, direction SHORT.
-        Taille = équivalent de ton capital spot.
+        Sélectionne ${coin}, choisis levier ×${lever}, direction SHORT.<br>
+        Taille notionnelle = valeur de ton achat spot.
       </div>
     </div>
     <div class="guide-step">
-      <div class="step-num">4</div>
+      <div class="step-num">${n[2]}</div>
       <div class="step-text"><strong>Vérifie la delta-neutralité</strong><br>
-        Spot long ≈ Perp short en valeur notionnelle.
-        Tu encaisses le funding toutes les heures.
+        Valeur spot ≈ valeur notionnelle du short perp.<br>
+        Tu es delta-neutral — tu encaisses le funding toutes les heures.
       </div>
     </div>
     <div class="guide-step">
-      <div class="step-num">5</div>
-      <div class="step-text"><strong>Surveille le funding rate</strong><br>
-        Si le rate devient négatif, les shorts paient les longs.
-        Configure une alerte dans l'onglet 🔔 Alertes.
+      <div class="step-num">${n[3]}</div>
+      <div class="step-text"><strong>Configure une alerte de sortie</strong><br>
+        Utilise le bouton 🔔 dans le Scanner pour être prévenu si l'APR chute de 7 points.<br>
+        <span style="color:var(--text3)">Si le funding devient négatif : les shorts paient les longs → sortir.</span>
       </div>
     </div>
   </div>`;
@@ -1500,6 +1819,37 @@ function openDropdown() { filterCoinDropdown(document.getElementById('sim-coin-i
 function closeDropdown() { document.getElementById('coin-dropdown').classList.remove('open'); }
 
 // ============================================================
+// QUICK ALERT FROM SCANNER
+// ============================================================
+function quickAlert(coin, apr, protocol) {
+  if (Notification.permission === 'default') Notification.requestPermission();
+
+  const aprNum = parseFloat(apr);
+  const DELTA = 7; // points de pourcentage
+  const thresholdDown = parseFloat((aprNum - DELTA).toFixed(2));
+
+  // Une seule alerte : si l'APR descend de 7 points sous la référence
+  const newAlert = { coin, cond: 'lt', threshold: thresholdDown, protocol, triggered: false, auto: true, aprRef: aprNum, delta: DELTA };
+
+  // Évite les doublons exacts
+  const exists = alerts.some(a =>
+    a.coin === newAlert.coin && a.cond === newAlert.cond &&
+    a.threshold === newAlert.threshold && a.protocol === newAlert.protocol
+  );
+  if (!exists) alerts.push(newAlert);
+
+  localStorage.setItem('doog_funding_alerts', JSON.stringify(alerts));
+
+  switchTab('alertes');
+  renderAlerts();
+
+  showNotif(
+    `🔔 Alerte créée — ${coin}`,
+    `APR réf. ${aprNum.toFixed(1)}% → alerte si APR < ${thresholdDown}% (−${DELTA} pts)`
+  );
+}
+
+// ============================================================
 // ALERTS
 // ============================================================
 function renderAlerts() {
@@ -1509,15 +1859,43 @@ function renderAlerts() {
     list.innerHTML = `<div class="empty-state">Aucune alerte configurée</div>`;
     return;
   }
-  list.innerHTML = `<div class="alert-list">${alerts.map((a, i) => `
+  list.innerHTML = `<div class="alert-list">${alerts.map((a, i) => {
+    const autoTag = a.auto
+      ? `<span style="font-size:9px;background:var(--orange-dim);color:var(--orange);border:1px solid rgba(255,170,0,0.2);border-radius:3px;padding:1px 5px;font-family:var(--mono);margin-left:6px;">AUTO −${a.delta||7}pts</span>`
+      : '';
+    const refLine = a.auto && a.aprRef !== undefined
+      ? `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;">Référence : ${a.aprRef.toFixed(1)}% − ${a.delta||7} pts = seuil ${a.threshold}%</div>`
+      : '';
+    return `
     <div class="alert-item ${a.triggered ? 'triggered' : ''}" id="alert-item-${i}">
       <div class="alert-info">
-        <div class="alert-name">${a.coin} · ${a.protocol}</div>
+        <div class="alert-name">${a.coin} · ${a.protocol}${autoTag}</div>
         <div class="alert-detail">APR ${a.cond === 'gt' ? '>' : '<'} ${a.threshold}% ${a.triggered ? '· <span style="color:var(--green)">DÉCLENCHÉE</span>' : ''}</div>
+        ${refLine}
       </div>
       ${a.triggered ? '<span class="alert-triggered-badge">✓ ACTIVE</span>' : ''}
       <button class="alert-delete" onclick="deleteAlert(${i})">✕</button>
-    </div>`).join('')}</div>`;
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function playAlertSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Deux bips courts
+    [0, 0.18].forEach(delay => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.15);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.15);
+    });
+  } catch(e) { /* son non supporté, silencieux */ }
 }
 
 function addAlert() {
@@ -1531,14 +1909,14 @@ function addAlert() {
   if (Notification.permission === 'default') Notification.requestPermission();
 
   alerts.push({ coin, cond, threshold, protocol, triggered: false });
-  localStorage.setItem('basis_alerts', JSON.stringify(alerts));
+  localStorage.setItem('doog_funding_alerts', JSON.stringify(alerts));
   renderAlerts();
   showNotif('Alerte créée', `${coin} APR ${cond === 'gt' ? '>' : '<'} ${threshold}%`);
 }
 
 function deleteAlert(i) {
   alerts.splice(i, 1);
-  localStorage.setItem('basis_alerts', JSON.stringify(alerts));
+  localStorage.setItem('doog_funding_alerts', JSON.stringify(alerts));
   renderAlerts();
 }
 
@@ -1555,15 +1933,16 @@ function checkAlerts() {
       if (!triggered) a.triggered = false;
     });
   });
-  localStorage.setItem('basis_alerts', JSON.stringify(alerts));
+  localStorage.setItem('doog_funding_alerts', JSON.stringify(alerts));
   renderAlerts();
 }
 
 function fireNotification(a, currentApr) {
+  playAlertSound();
   showNotif(`🔔 ${a.coin} — Alerte déclenchée`,
     `APR actuel : ${currentApr.toFixed(1)}% (seuil : ${a.threshold}%)`);
   if (Notification.permission === 'granted') {
-    new Notification(`Basis Scanner · ${a.coin}`, {
+    new Notification(`Doog Funding Trade · ${a.coin}`, {
       body: `APR ${a.cond === 'gt' ? '>' : '<'} ${a.threshold}% — Actuel : ${currentApr.toFixed(1)}%`,
       icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%2300e5a0"/></svg>'
     });
