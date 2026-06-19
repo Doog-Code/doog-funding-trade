@@ -1334,7 +1334,8 @@ function toggleWatch(coin, protocol, aprLive, btn) {
       lever:             1.0,
       price_change_pct:  3.0,
       price_window_h:    24,
-      liq_price:         null,   // Prix de liquidation réel — à renseigner manuellement
+      liq_price:         null,
+      entry_price:       null,   // Prix d'entrée spot — pour calcul PnL et référence
     });
     btn.textContent = '📡 ✓';
     btn.classList.add('watching');
@@ -1393,13 +1394,24 @@ function renderWatched() {
               onchange="updateWatched(${i},'price_change_pct',this.value)">
           </div>
           <div class="control-group">
+            <span class="control-label">PRIX D'ENTRÉE ($)
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Prix auquel tu as acheté le spot. Utilisé pour calculer ton PnL et comme référence de variation de prix.</span>
+              </span>
+            </span>
+            <input type="number" value="${w.entry_price || ''}" placeholder="Ex: 28.50" step="0.0001" min="0"
+              style="width:110px;font-size:12px;padding:5px 8px;background:var(--bg3);border:1px solid rgba(77,166,255,0.3);color:var(--blue);border-radius:5px;font-family:var(--mono);"
+              onchange="updateWatched(${i},'entry_price',this.value)">
+          </div>
+          <div class="control-group">
             <span class="control-label">PRIX LIQUIDATION ($)
               <span class="tooltip-wrap">
                 <span class="tooltip-icon">?</span>
                 <span class="tooltip-box">Copie le prix de liquidation affiché sur ta position Hyperliquid/dYdX. Si tu rajoutes de la marge, mets-le à jour ici et réexporte le fichier.</span>
               </span>
             </span>
-            <input type="number" value="${w.liq_price || ''}" placeholder="Ex: 28.50" step="0.01" min="0"
+            <input type="number" value="${w.liq_price || ''}" placeholder="Ex: 34.00" step="0.0001" min="0"
               style="width:110px;font-size:12px;padding:5px 8px;background:var(--bg3);border:1px solid rgba(255,77,106,0.3);color:var(--red);border-radius:5px;font-family:var(--mono);"
               onchange="updateWatched(${i},'liq_price',this.value)">
           </div>
