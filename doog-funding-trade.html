@@ -1051,7 +1051,7 @@
       <div class="card" style="margin-bottom:16px;">
         <div class="card-title">Résultats estimés</div>
         <!-- SECTION RENDEMENT -->
-        <div style="grid-column:1/-1;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;padding:4px 0 2px;">— Rendement estimé —</div>
+        <div style="grid-column:1/-1;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;padding:4px 0 2px;">— Rendement estimé (sur taille notionnelle) —</div>
         <div class="result-grid" id="sim-results">
           <div class="result-card">
             <div class="result-label">Par jour</div>
@@ -1068,6 +1068,33 @@
           <div class="result-card">
             <div class="result-label">Par an</div>
             <div class="result-value" id="r-year">—</div>
+          </div>
+        </div>
+
+        <!-- SECTION ROI RÉEL -->
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;padding:14px 0 6px;">— ROI réel sur capital total sorti de poche —
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box">Le ROI tient compte du capital TOTAL engagé (spot + marge). Avec un levier ×5, tu déposes moins de marge donc le ROI réel est plus élevé qu'à ×1 pour le même rendement notionnel.</span>
+          </span>
+        </div>
+        <div class="result-grid">
+          <div class="result-card" style="border-color:rgba(0,229,160,0.2);">
+            <div class="result-label">ROI / jour</div>
+            <div class="result-value" id="r-roi-day" style="font-size:16px;">—</div>
+          </div>
+          <div class="result-card" style="border-color:rgba(0,229,160,0.2);">
+            <div class="result-label">ROI / mois</div>
+            <div class="result-value" id="r-roi-month" style="font-size:16px;">—</div>
+          </div>
+          <div class="result-card" style="grid-column:1/-1;border-color:rgba(0,229,160,0.3);background:rgba(0,229,160,0.04);">
+            <div class="result-label">✦ ROI annualisé réel
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Rendement annuel ÷ (spot + marge). C'est le chiffre qui compte vraiment pour comparer des stratégies avec différents leviers.</span>
+              </span>
+            </div>
+            <div class="result-value" id="r-roi-year" style="font-size:22px;">—</div>
           </div>
         </div>
 
@@ -1901,6 +1928,14 @@ function calculate() {
   // Total notionnel = spot + perp = 2× la taille saisie
   const totalNotional = notionalSize * 2;
 
+  // ── ROI réel sur capital total sorti de poche ────────────────
+  // Le funding est gagné sur la taille notionnelle (capital spot)
+  // mais le capital réel engagé = spot + marge
+  // ROI réel = rendement annuel / total sorti de poche
+  const roiReal     = (yearReturn / totalOutOfPocket) * 100;
+  const roiDay      = (dailyReturn / totalOutOfPocket) * 100;
+  const roiMonth    = (monthReturn / totalOutOfPocket) * 100;
+
   // ── Classes couleur ──────────────────────────────────────────
   const liqClass = liqDistancePct > 40 ? '' : liqDistancePct > 20 ? 'warn' : 'danger';
 
@@ -1910,7 +1945,10 @@ function calculate() {
   document.getElementById('r-month').textContent = '$' + monthReturn.toFixed(2);
   document.getElementById('r-year').textContent  = '$' + yearReturn.toFixed(2);
 
-  document.getElementById('r-spot').textContent    = '$' + spotRequired.toFixed(0);
+  // ROI réel
+  document.getElementById('r-roi-day').textContent   = roiDay.toFixed(3) + '%';
+  document.getElementById('r-roi-month').textContent = roiMonth.toFixed(2) + '%';
+  document.getElementById('r-roi-year').textContent  = roiReal.toFixed(2) + '%';
   document.getElementById('r-margin').textContent  = '$' + marginRequired.toFixed(0);
   document.getElementById('r-total').textContent   = '$' + totalOutOfPocket.toFixed(0);
   document.getElementById('r-notional').textContent = '$' + totalNotional.toFixed(0);
